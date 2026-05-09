@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asistan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    select, textarea, input {
+      width: 100%;
+      border: 1px solid #d9d9d9;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      color: #1a1a1a;
+      background: #fafafa;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, textarea:focus, input:focus {
+      outline: none;
+      border-color: #4f6ef7;
+      background: #fff;
+    }
+
+    textarea#system { height: 90px; resize: vertical; }
+
+    /* Kurulum alanı */
+    #setup-section { display: flex; flex-direction: column; gap: 16px; }
+
+    #baslatBtn {
+      padding: 11px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #baslatBtn:hover { background: #3a58e0; }
+    #baslatBtn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    /* Sohbet alanı */
+    #chat-section { display: none; flex-direction: column; gap: 16px; }
+
+    .session-info {
+      font-size: 0.8rem;
+      color: #888;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #yeniBtn {
+      font-size: 0.8rem;
+      color: #4f6ef7;
+      background: none;
+      border: 1px solid #4f6ef7;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+    }
+    #yeniBtn:hover { background: #eef0fd; }
+
+    #messages {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 280px;
+      max-height: 420px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f7f8fc;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-width: 85%;
+    }
+
+    .message.user { align-self: flex-end; align-items: flex-end; }
+    .message.assistant { align-self: flex-start; align-items: flex-start; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.93rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .message.user .bubble {
+      background: #4f6ef7;
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+
+    .message.assistant .bubble {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      color: #2d3748;
+      border-bottom-left-radius: 3px;
+    }
+
+    .role-label {
+      font-size: 0.75rem;
+      color: #999;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #userPrompt {
+      flex: 1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      resize: none;
+      height: 48px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    #gonderBtn {
+      padding: 11px 20px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+      height: 48px;
+    }
+    #gonderBtn:hover { background: #3a58e0; }
+    #gonderBtn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-hint {
+      text-align: center;
+      color: #bbb;
+      font-size: 0.9rem;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Asistan</h1>
+
+    <!-- Kurulum -->
+    <div id="setup-section">
+      <div>
+        <label for="model">Model</label>
+        <select id="model">
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="gpt-4o">gpt-4o</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+        </select>
+      </div>
+      <div>
+        <label for="system">System Instructions</label>
+        <textarea id="system" placeholder="Asistana verilecek rol veya talimatları buraya yazın...">Sen yardımsever bir asistansın.</textarea>
+      </div>
+      <button id="baslatBtn" onclick="asistanBaslat()">Sohbeti Başlat</button>
+    </div>
+
+    <!-- Sohbet -->
+    <div id="chat-section">
+      <div class="session-info">
+        <span id="sessionLabel"></span>
+        <button id="yeniBtn" onclick="sifirla()">Yeni Sohbet</button>
+      </div>
+
+      <div id="messages">
+        <span class="empty-hint">Henüz mesaj yok. Bir şey yazın!</span>
+      </div>
+
+      <div class="input-row">
+        <textarea id="userPrompt" placeholder="Mesajınızı yazın..." onkeydown="enterGonder(event)"></textarea>
+        <button id="gonderBtn" onclick="mesajGonder()">Gönder</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let sessionId = null;
+
+    async function asistanBaslat() {
+      const model = document.getElementById("model").value;
+      const system_instructions = document.getElementById("system").value.trim();
+      const btn = document.getElementById("baslatBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Başlatılıyor...';
+
+      try {
+        const res = await fetch("/api/asistan/yeni", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, system_instructions }),
+        });
+
+        if (!res.ok) throw new Error(`Sunucu hatası: ${res.status}`);
+
+        const data = await res.json();
+        sessionId = data.session_id;
+
+        document.getElementById("setup-section").style.display = "none";
+        const chatSection = document.getElementById("chat-section");
+        chatSection.style.display = "flex";
+        document.getElementById("sessionLabel").textContent =
+          `Model: ${model} · Session: ${sessionId.slice(0, 8)}...`;
+        document.getElementById("userPrompt").focus();
+      } catch (err) {
+        alert("Asistan başlatılamadı: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Sohbeti Başlat";
+      }
+    }
+
+    function enterGonder(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        mesajGonder();
+      }
+    }
+
+    async function mesajGonder() {
+      const promptEl = document.getElementById("userPrompt");
+      const user_prompt = promptEl.value.trim();
+      if (!user_prompt) return;
+
+      const gonderBtn = document.getElementById("gonderBtn");
+      gonderBtn.disabled = true;
+      gonderBtn.innerHTML = '<span class="spinner"></span>';
+
+      promptEl.value = "";
+      promptEl.style.height = "48px";
+
+      ekleKullanici(user_prompt);
+      const assistantBubble = ekleAsistan();
+
+      try {
+        const res = await fetch("/api/asistan/sohbet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, user_prompt }),
+        });
+
+        if (!res.ok) throw new Error(`Sunucu hatası: ${res.status}`);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          assistantBubble.textContent += decoder.decode(value, { stream: true });
+          scrollAsagi();
+        }
+        assistantBubble.textContent += decoder.decode();
+      } catch (err) {
+        assistantBubble.textContent = "Hata: " + err.message;
+      } finally {
+        gonderBtn.disabled = false;
+        gonderBtn.textContent = "Gönder";
+        promptEl.focus();
+      }
+    }
+
+    function ekleKullanici(metin) {
+      temizleHint();
+      const messages = document.getElementById("messages");
+      const div = document.createElement("div");
+      div.className = "message user";
+      div.innerHTML = `<span class="role-label">Siz</span><div class="bubble">${escHtml(metin)}</div>`;
+      messages.appendChild(div);
+      scrollAsagi();
+    }
+
+    function ekleAsistan() {
+      temizleHint();
+      const messages = document.getElementById("messages");
+      const div = document.createElement("div");
+      div.className = "message assistant";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      div.innerHTML = `<span class="role-label">Asistan</span>`;
+      div.appendChild(bubble);
+      messages.appendChild(div);
+      scrollAsagi();
+      return bubble;
+    }
+
+    function temizleHint() {
+      const hint = document.querySelector(".empty-hint");
+      if (hint) hint.remove();
+    }
+
+    function scrollAsagi() {
+      const messages = document.getElementById("messages");
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function sifirla() {
+      sessionId = null;
+      document.getElementById("messages").innerHTML =
+        '<span class="empty-hint">Henüz mesaj yok. Bir şey yazın!</span>';
+      document.getElementById("chat-section").style.display = "none";
+      const setup = document.getElementById("setup-section");
+      setup.style.display = "flex";
+      const btn = document.getElementById("baslatBtn");
+      btn.disabled = false;
+      btn.textContent = "Sohbeti Başlat";
+    }
+  </script>
+</body>
+</html>
