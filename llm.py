@@ -1,17 +1,27 @@
 from openai import OpenAI
 from dotenv import load_dotenv
+from typing import Iterator
 
 load_dotenv()
 
 client = OpenAI()
 
 
-def call_llm(system_instructions: str, user_prompt: str, model: str = "gpt-4.1-mini") -> str:
-    response = client.chat.completions.create(
+def stream_llm(
+    system_instructions: str,
+    user_prompt: str,
+    model: str = "gpt-4.1-mini",
+) -> Iterator[str]:
+    stream = client.chat.completions.create(
         model=model,
         messages=[
             {"role": "system", "content": system_instructions},
             {"role": "user", "content": user_prompt},
         ],
+        stream=True,
     )
-    return response.choices[0].message.content
+
+    for chunk in stream:
+        content = chunk.choices[0].delta.content
+        if content:
+            yield content

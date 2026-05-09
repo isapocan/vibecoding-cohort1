@@ -161,8 +161,9 @@
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Yanıt bekleniyor...';
-      responseBox.style.display = "none";
+      btn.innerHTML = '<span class="spinner"></span>Yanıt geliyor...';
+      responseEl.textContent = "";
+      responseBox.style.display = "block";
 
       try {
         const res = await fetch("/api/chat", {
@@ -171,9 +172,25 @@
           body: JSON.stringify({ model, system_instructions, user_prompt }),
         });
 
-        const data = await res.json();
-        responseEl.textContent = data.response ?? data.error ?? "Bilinmeyen hata.";
-        responseBox.style.display = "block";
+        if (!res.ok) {
+          throw new Error(`Sunucu hatası: ${res.status}`);
+        }
+
+        if (!res.body) {
+          throw new Error("Tarayıcı streaming yanıtı desteklemiyor.");
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          responseEl.textContent += decoder.decode(value, { stream: true });
+        }
+
+        responseEl.textContent += decoder.decode();
       } catch (err) {
         responseEl.textContent = "Sunucuya bağlanılamadı: " + err.message;
         responseBox.style.display = "block";
