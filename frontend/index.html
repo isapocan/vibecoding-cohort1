@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LLM Arayüzü</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 32px;
+      width: 100%;
+      max-width: 720px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    select, textarea {
+      width: 100%;
+      border: 1px solid #d9d9d9;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      color: #1a1a1a;
+      background: #fafafa;
+      transition: border-color 0.2s;
+      resize: vertical;
+    }
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: #4f6ef7;
+      background: #fff;
+    }
+
+    .field { margin-bottom: 20px; }
+
+    textarea#system { height: 100px; }
+    textarea#prompt { height: 120px; }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #4f6ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #3a58e0; }
+    button:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    .response-box {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .response-box label { margin-bottom: 8px; }
+
+    #response {
+      background: #f7f8fc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #2d3748;
+      min-height: 80px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>LLM Arayüzü</h1>
+
+    <div class="field">
+      <label for="model">Model</label>
+      <select id="model">
+        <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+        <option value="gpt-4.1">gpt-4.1</option>
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="system">System Instructions</label>
+      <textarea id="system" placeholder="Modele verilecek sistem talimatlarını buraya yazın..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="prompt">User Prompt</label>
+      <textarea id="prompt" placeholder="Sorunuzu veya isteğinizi buraya yazın..."></textarea>
+    </div>
+
+    <button id="sendBtn" onclick="sendRequest()">Gönder</button>
+
+    <div class="response-box" id="responseBox">
+      <label>Yanıt</label>
+      <div id="response"></div>
+    </div>
+  </div>
+
+  <script>
+    async function sendRequest() {
+      const model = document.getElementById("model").value;
+      const system_instructions = document.getElementById("system").value.trim();
+      const user_prompt = document.getElementById("prompt").value.trim();
+      const btn = document.getElementById("sendBtn");
+      const responseBox = document.getElementById("responseBox");
+      const responseEl = document.getElementById("response");
+
+      if (!user_prompt) {
+        alert("Lütfen bir prompt girin.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Yanıt bekleniyor...';
+      responseBox.style.display = "none";
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, system_instructions, user_prompt }),
+        });
+
+        const data = await res.json();
+        responseEl.textContent = data.response ?? data.error ?? "Bilinmeyen hata.";
+        responseBox.style.display = "block";
+      } catch (err) {
+        responseEl.textContent = "Sunucuya bağlanılamadı: " + err.message;
+        responseBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Gönder";
+      }
+    }
+  </script>
+</body>
+</html>
