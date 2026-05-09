@@ -1,64 +1,98 @@
-# Repository Guidelines
+# AGENTS.md — Repository Guidelines
 
-## Project Structure & Module Organization
+## ZORUNLU KURAL: Bu Dosyaları Her Zaman Güncelle
 
-This repository is a small Flask application with a static frontend.
+**Her kod değişikliğinin ardından, commit yapmadan önce `CLAUDE.md` ve `AGENTS.md` dosyalarını güncellemelisin.**
 
-- `app.py` defines the Flask app, serves `frontend/index.html`, and exposes `POST /api/chat`.
-- `llm.py` contains OpenAI client setup and streaming response logic.
-- `frontend/index.html` contains the complete HTML, CSS, and browser JavaScript UI.
-- `requirements.txt` lists Python runtime dependencies.
-- `.env` is used for local secrets such as `OPENAI_API_KEY`; do not commit it.
+Aşağıdaki durumlarda ilgili bölümleri güncelle:
 
-Keep backend request validation and routing in `app.py`. Keep provider-specific LLM calls in `llm.py`. Add static assets under `frontend/` if the UI grows.
+| Değişiklik | Güncelle |
+|---|---|
+| Yeni modül / dosya eklendi | "Proje Yapısı" bölümü her iki dosyada |
+| Yeni API endpoint'i | `CLAUDE.md` endpoint tablosu + bu dosyadaki routing bölümü |
+| Yeni frontend sayfası | `CLAUDE.md` mimari tablosu + bu dosyadaki yapı bölümü |
+| Yeni `pip` bağımlılığı | Bu dosyadaki bağımlılıklar bölümü |
+| Yeni ortam değişkeni | Her iki dosyadaki ilgili notlar |
 
-## Build, Test, and Development Commands
+Bu dosyaları güncellemeden commit atmak yasaktır.
 
-Create and activate a virtual environment:
+---
+
+## Proje Yapısı
+
+```
+app.py                  # Flask uygulaması; routing, doğrulama, oturum yönetimi
+llm.py                  # OpenAI istemcisi; hafızasız stream_llm() fonksiyonu
+asistan.py              # Asistan sınıfı; conversation history + stream_sohbet()
+frontend/
+  index.html            # LLM arayüzü: tek seferlik prompt/yanıt sayfası
+  asistan.html          # Asistan arayüzü: çok turlu, baloncuklu sohbet sayfası
+requirements.txt        # Python bağımlılıkları
+.env                    # Yerel sırlar (commit edilmez); OPENAI_API_KEY buraya
+CLAUDE.md               # Claude Code'a mimari rehberlik
+AGENTS.md               # Bu dosya; geliştirici ve ajan kuralları
+```
+
+Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrıları `llm.py` veya `asistan.py`'de kalır. Statik dosyalar `frontend/` altına eklenir.
+
+---
+
+## API Endpoint'leri
+
+| Method | Path | Body | Açıklama |
+|---|---|---|---|
+| POST | `/api/chat` | `{model, system_instructions, user_prompt}` | Hafızasız, tek seferlik LLM çağrısı (streaming) |
+| POST | `/api/asistan/yeni` | `{model, system_instructions}` | Yeni asistan oturumu oluşturur, `session_id` döner |
+| POST | `/api/asistan/sohbet` | `{session_id, user_prompt}` | Asistana mesaj gönderir (streaming) |
+
+---
+
+## Geliştirme Komutları
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-Install dependencies:
-
-```sh
 pip install -r requirements.txt
+flask --app app run --debug   # http://127.0.0.1:5000
 ```
 
-Run locally:
+---
 
-```sh
-python app.py
-```
+## Kod Stili
 
-The app starts Flask in debug mode and serves the UI at `http://127.0.0.1:5000/`.
+- Python 3, 4 boşluk girinti, yeniden kullanılabilir yardımcılar için type hint.
+- `stream_llm(...) -> Iterator[str]` ve `stream_sohbet(...) -> Iterator[str]` imzası örnek alınmalı.
+- Hata mesajları API sınırını geçiyorsa kullanıcıya yönelik, provider hatası gizlenmeli.
+- Frontend: sade HTML/CSS/JS, `camelCase` JS değişkenleri, amaca uygun `id` isimleri.
 
-## Coding Style & Naming Conventions
+---
 
-Use Python 3 with 4-space indentation, clear function names, and type hints for reusable helpers, following the current `stream_llm(...) -> Iterator[str]` style. Prefer small functions and keep error messages user-facing where they cross the API boundary.
+## Test Kılavuzu
 
-Frontend code currently uses plain HTML, CSS, and JavaScript in one file. Use `camelCase` for JavaScript variables and functions, and descriptive `id` names that match their purpose, such as `sendBtn` and `responseBox`.
+Otomatik test suite mevcut değil. Test eklenecekse:
 
-## Testing Guidelines
-
-No automated test suite is currently present. When adding tests, create a `tests/` directory and use `pytest` for backend behavior. Name files `test_*.py` and focus on Flask route validation, model allow-list behavior, and streaming error handling.
-
-Run future tests with:
+- `tests/` dizini oluştur, `pytest` kullan.
+- Dosyaları `test_*.py` olarak adlandır.
+- Öncelikli test alanları: Flask route doğrulama, `ALLOWED_MODELS` kontrolü, streaming hata yönetimi, asistan history doğruluğu.
 
 ```sh
 pytest
 ```
 
-For frontend changes, manually verify prompt submission, empty prompt validation, model selection, and streamed output rendering in a browser.
+Frontend değişikliklerinde tarayıcıda şunları manuel doğrula: boş prompt engelleme, model seçimi, streaming render, asistan history sürekliliği.
 
-## Commit & Pull Request Guidelines
+---
 
-Recent commits use short, direct messages, sometimes in Turkish, for example `Add streaming LLM responses` and `requirements.txt olusturuldu`. Keep commits concise and imperative where possible, such as `Validate chat payload`.
+## Commit ve PR Kuralları
 
-Pull requests should include a brief summary, testing notes, any required `.env` changes, and screenshots or screen recordings for UI changes. Link related issues when available.
+- Commit mesajları kısa ve imperative: `Add streaming assistant`, `Validate chat payload`.
+- PR'lara: kısa özet, test notları, gerekli `.env` değişiklikleri, UI değişimi varsa ekran görüntüsü ekle.
 
-## Security & Configuration Tips
+---
 
-Store API keys only in `.env` and load them through `python-dotenv`. Never print secrets in logs or return raw provider errors to the browser. Update `ALLOWED_MODELS` in `app.py` and the model `<select>` in `frontend/index.html` together.
+## Güvenlik
+
+- API anahtarları yalnızca `.env`'de; `python-dotenv` ile yükle. Commit etme.
+- Log veya API yanıtında sır basmak yasak.
+- `ALLOWED_MODELS` değiştiğinde `app.py` ve tüm frontend `<select>` elementleri birlikte güncellenmeli.
+- `_asistanlar` dict'i sunucu hafızasında; production için kalıcı depolama gerekir.
