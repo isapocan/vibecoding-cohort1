@@ -24,16 +24,18 @@ Bu dosyaları güncellemeden commit atmak yasaktır.
 app.py                  # Flask uygulaması; routing, doğrulama, oturum yönetimi
 llm.py                  # OpenAI istemcisi; hafızasız stream_llm() fonksiyonu
 asistan.py              # Asistan sınıfı; conversation history + stream_sohbet()
+agent.py                # Agent sınıfı; tool-calling agentic loop + calistir() generator
 frontend/
   index.html            # LLM arayüzü: tek seferlik prompt/yanıt sayfası
   asistan.html          # Asistan arayüzü: çok turlu, baloncuklu sohbet sayfası
+  agent.html            # Agent arayüzü: tool call'ları ve adımları görsel gösterim
 requirements.txt        # Python bağımlılıkları
 .env                    # Yerel sırlar (commit edilmez); OPENAI_API_KEY buraya
 CLAUDE.md               # Claude Code'a mimari rehberlik
 AGENTS.md               # Bu dosya; geliştirici ve ajan kuralları
 ```
 
-Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrıları `llm.py` veya `asistan.py`'de kalır. Statik dosyalar `frontend/` altına eklenir.
+Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrıları `llm.py`, `asistan.py` veya `agent.py`'de kalır. Statik dosyalar `frontend/` altına eklenir.
 
 ---
 
@@ -41,9 +43,11 @@ Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrı
 
 | Method | Path | Body | Açıklama |
 |---|---|---|---|
-| POST | `/api/chat` | `{model, system_instructions, user_prompt}` | Hafızasız, tek seferlik LLM çağrısı (streaming) |
+| POST | `/api/chat` | `{model, system_instructions, user_prompt}` | Hafızasız, tek seferlik LLM çağrısı (streaming, text/plain) |
 | POST | `/api/asistan/yeni` | `{model, system_instructions}` | Yeni asistan oturumu oluşturur, `session_id` döner |
-| POST | `/api/asistan/sohbet` | `{session_id, user_prompt}` | Asistana mesaj gönderir (streaming) |
+| POST | `/api/asistan/sohbet` | `{session_id, user_prompt}` | Asistana mesaj gönderir (streaming, text/plain) |
+| POST | `/api/agent/yeni` | `{model, system_instructions}` | Yeni agent oturumu oluşturur, `session_id` döner |
+| POST | `/api/agent/calistir` | `{session_id, user_prompt}` | Agent'ı çalıştırır (NDJSON stream; event tipleri: `step_start`, `thinking`, `tool_call`, `tool_result`, `text`, `done`, `error`) |
 
 ---
 

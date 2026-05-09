@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kodlama Agenti</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1a1d27;
+      border-radius: 14px;
+      border: 1px solid #2d3148;
+      padding: 28px;
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: #312e81;
+      color: #a78bfa;
+      border-radius: 99px;
+      padding: 3px 10px;
+      letter-spacing: 0.04em;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    select, textarea {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, textarea:focus {
+      outline: none;
+      border-color: #7c3aed;
+    }
+
+    textarea#system { height: 80px; resize: vertical; }
+
+    #setup-section { display: flex; flex-direction: column; gap: 14px; }
+
+    #baslatBtn {
+      padding: 11px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #baslatBtn:hover { background: #6d28d9; }
+    #baslatBtn:disabled { background: #3730a3; color: #818cf8; cursor: not-allowed; }
+
+    /* Agent çalışma alanı */
+    #agent-section { display: none; flex-direction: column; gap: 14px; }
+
+    .session-info {
+      font-size: 0.75rem;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #yeniBtn {
+      font-size: 0.75rem;
+      color: #a78bfa;
+      background: none;
+      border: 1px solid #4c1d95;
+      border-radius: 6px;
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+    #yeniBtn:hover { background: #1e1b4b; }
+
+    /* Mesaj alanı */
+    #messages {
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 16px;
+      min-height: 360px;
+      max-height: 560px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0f1117;
+    }
+
+    .empty-hint {
+      text-align: center;
+      color: #475569;
+      font-size: 0.85rem;
+      margin: auto;
+    }
+
+    /* Kullanıcı mesajı */
+    .msg-user {
+      align-self: flex-end;
+      background: #4c1d95;
+      color: #e9d5ff;
+      border-radius: 10px 10px 2px 10px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      max-width: 80%;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Adım bloğu */
+    .step-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .step-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #7c3aed;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #2d3148;
+    }
+
+    /* Thinking kutusu */
+    .thinking-box {
+      background: #1e1b4b22;
+      border-left: 3px solid #4338ca;
+      border-radius: 0 6px 6px 0;
+      padding: 8px 12px;
+      font-size: 0.83rem;
+      color: #818cf8;
+      font-style: italic;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Tool call kutusu */
+    .tool-call-box {
+      background: #1c1400;
+      border: 1px solid #854d0e;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tool-call-header {
+      background: #1f1700;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #fbbf24;
+    }
+
+    .tool-icon { font-size: 0.9rem; }
+
+    .tool-call-body {
+      padding: 10px 12px;
+    }
+
+    .arg-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    .arg-key {
+      color: #f59e0b;
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 60px;
+    }
+
+    .arg-val {
+      color: #d1d5db;
+      font-family: "Menlo", "Consolas", monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: #0f1117;
+      border-radius: 4px;
+      padding: 2px 6px;
+      flex: 1;
+    }
+
+    /* Tool result kutusu */
+    .tool-result-box {
+      background: #0a1a10;
+      border: 1px solid #166534;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .tool-result-header {
+      background: #0c1e12;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #4ade80;
+    }
+
+    .tool-result-body {
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      font-family: "Menlo", "Consolas", monospace;
+      color: #86efac;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.5;
+    }
+
+    /* Son yanıt (text) */
+    .text-box {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Hata */
+    .error-box {
+      background: #1f0a0a;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+      color: #fca5a5;
+    }
+
+    /* Input */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #userPrompt {
+      flex: 1;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      resize: none;
+      height: 48px;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    #gonderBtn {
+      padding: 0 20px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+      height: 48px;
+    }
+    #gonderBtn:hover { background: #6d28d9; }
+    #gonderBtn:disabled { background: #3730a3; color: #818cf8; cursor: not-allowed; }
+
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid rgba(167,139,250,0.3);
+      border-top-color: #a78bfa;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 99px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>Kodlama Agenti</h1>
+      <span class="badge">TOOL USE LOOP</span>
+    </div>
+
+    <!-- Kurulum -->
+    <div id="setup-section">
+      <div>
+        <label for="model">Model</label>
+        <select id="model">
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="gpt-4o">gpt-4o</option>
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+        </select>
+      </div>
+      <div>
+        <label for="system">System Instructions</label>
+        <textarea id="system">Sen bir kodlama agentisin. Görevleri tamamlamak için terminal, dosya okuma ve dosya yazma araçlarını kullan. Türkçe yanıt ver.</textarea>
+      </div>
+      <button id="baslatBtn" onclick="agentBaslat()">Agenti Başlat</button>
+    </div>
+
+    <!-- Agent çalışma alanı -->
+    <div id="agent-section">
+      <div class="session-info">
+        <span id="sessionLabel"></span>
+        <button id="yeniBtn" onclick="sifirla()">Yeni Oturum</button>
+      </div>
+
+      <div id="messages">
+        <span class="empty-hint">Agent hazır. Bir görev verin.</span>
+      </div>
+
+      <div class="input-row">
+        <textarea id="userPrompt" placeholder="Görevi yazın... (Shift+Enter yeni satır)" onkeydown="enterGonder(event)"></textarea>
+        <button id="gonderBtn" onclick="gorevVer()">Çalıştır</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let sessionId = null;
+
+    // ── Tool ikonları ──────────────────────────────────────
+    const TOOL_ICONS = {
+      terminal:   "⚡",
+      dosya_oku:  "📖",
+      dosya_yaz:  "✏️",
+    };
+
+    // ── Başlat ─────────────────────────────────────────────
+    async function agentBaslat() {
+      const model = document.getElementById("model").value;
+      const system_instructions = document.getElementById("system").value.trim();
+      const btn = document.getElementById("baslatBtn");
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Başlatılıyor...';
+
+      try {
+        const res = await fetch("/api/agent/yeni", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model, system_instructions }),
+        });
+        if (!res.ok) throw new Error(`Sunucu hatası: ${res.status}`);
+
+        const data = await res.json();
+        sessionId = data.session_id;
+
+        document.getElementById("setup-section").style.display = "none";
+        const sec = document.getElementById("agent-section");
+        sec.style.display = "flex";
+        document.getElementById("sessionLabel").textContent =
+          `Model: ${model}  ·  Session: ${sessionId.slice(0, 8)}…`;
+        document.getElementById("userPrompt").focus();
+      } catch (err) {
+        alert("Agent başlatılamadı: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Agenti Başlat";
+      }
+    }
+
+    function enterGonder(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        gorevVer();
+      }
+    }
+
+    // ── Görev gönder ───────────────────────────────────────
+    async function gorevVer() {
+      const promptEl = document.getElementById("userPrompt");
+      const user_prompt = promptEl.value.trim();
+      if (!user_prompt) return;
+
+      const btn = document.getElementById("gonderBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>';
+
+      promptEl.value = "";
+      promptEl.style.height = "48px";
+
+      temizleHint();
+      ekleKullanici(user_prompt);
+
+      // Aktif adım bloğu
+      let stepBlock = null;
+      let stepCount = 0;
+
+      try {
+        const res = await fetch("/api/agent/calistir", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, user_prompt }),
+        });
+        if (!res.ok) throw new Error(`Sunucu hatası: ${res.status}`);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop();
+          for (const line of lines) {
+            if (line.trim()) handleEvent(JSON.parse(line));
+          }
+        }
+        if (buffer.trim()) handleEvent(JSON.parse(buffer));
+
+      } catch (err) {
+        ekleHata(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Çalıştır";
+        promptEl.focus();
+      }
+
+      // ── Event handler ────────────────────────────────────
+      function handleEvent(ev) {
+        switch (ev.type) {
+
+          case "step_start": {
+            stepCount++;
+            stepBlock = document.createElement("div");
+            stepBlock.className = "step-block";
+
+            const lbl = document.createElement("div");
+            lbl.className = "step-label";
+            lbl.textContent = `Adım ${stepCount}`;
+            stepBlock.appendChild(lbl);
+
+            getMsgs().appendChild(stepBlock);
+            scroll();
+            break;
+          }
+
+          case "thinking": {
+            const box = document.createElement("div");
+            box.className = "thinking-box";
+            box.textContent = ev.content;
+            (stepBlock || getMsgs()).appendChild(box);
+            scroll();
+            break;
+          }
+
+          case "tool_call": {
+            const wrap = document.createElement("div");
+            wrap.className = "tool-call-box";
+
+            const icon = TOOL_ICONS[ev.name] || "🔧";
+            const hdr = document.createElement("div");
+            hdr.className = "tool-call-header";
+            hdr.innerHTML = `<span class="tool-icon">${icon}</span> ${ev.name}`;
+            wrap.appendChild(hdr);
+
+            const body = document.createElement("div");
+            body.className = "tool-call-body";
+
+            for (const [k, v] of Object.entries(ev.args)) {
+              const row = document.createElement("div");
+              row.className = "arg-row";
+              row.innerHTML = `<span class="arg-key">${escHtml(k)}</span>
+                               <span class="arg-val">${escHtml(String(v))}</span>`;
+              body.appendChild(row);
+            }
+
+            wrap.appendChild(body);
+            (stepBlock || getMsgs()).appendChild(wrap);
+            scroll();
+            break;
+          }
+
+          case "tool_result": {
+            const wrap = document.createElement("div");
+            wrap.className = "tool-result-box";
+
+            const icon = TOOL_ICONS[ev.name] || "🔧";
+            const hdr = document.createElement("div");
+            hdr.className = "tool-result-header";
+            hdr.innerHTML = `<span>✓</span> ${icon} ${ev.name} sonucu`;
+            wrap.appendChild(hdr);
+
+            const body = document.createElement("div");
+            body.className = "tool-result-body";
+            body.textContent = ev.result;
+            wrap.appendChild(body);
+
+            (stepBlock || getMsgs()).appendChild(wrap);
+            scroll();
+            break;
+          }
+
+          case "text": {
+            const box = document.createElement("div");
+            box.className = "text-box";
+            box.textContent = ev.content;
+            (stepBlock || getMsgs()).appendChild(box);
+            scroll();
+            break;
+          }
+
+          case "error": {
+            ekleHata(ev.message);
+            break;
+          }
+
+          case "done":
+            break;
+        }
+      }
+    }
+
+    // ── Yardımcılar ────────────────────────────────────────
+    function getMsgs() {
+      return document.getElementById("messages");
+    }
+
+    function temizleHint() {
+      const hint = getMsgs().querySelector(".empty-hint");
+      if (hint) hint.remove();
+    }
+
+    function ekleKullanici(metin) {
+      const div = document.createElement("div");
+      div.className = "msg-user";
+      div.textContent = metin;
+      getMsgs().appendChild(div);
+      scroll();
+    }
+
+    function ekleHata(mesaj) {
+      const div = document.createElement("div");
+      div.className = "error-box";
+      div.textContent = "Hata: " + mesaj;
+      getMsgs().appendChild(div);
+      scroll();
+    }
+
+    function scroll() {
+      const m = getMsgs();
+      m.scrollTop = m.scrollHeight;
+    }
+
+    function escHtml(s) {
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function sifirla() {
+      sessionId = null;
+      getMsgs().innerHTML = '<span class="empty-hint">Agent hazır. Bir görev verin.</span>';
+      document.getElementById("agent-section").style.display = "none";
+      const setup = document.getElementById("setup-section");
+      setup.style.display = "flex";
+      const btn = document.getElementById("baslatBtn");
+      btn.disabled = false;
+      btn.textContent = "Agenti Başlat";
+    }
+  </script>
+</body>
+</html>
