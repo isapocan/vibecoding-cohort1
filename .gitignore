@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Sanal ortamlar
+.venv/
+venv/
+env/
+ENV/
+
+# Ortam degiskenleri ve sirlar
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Dagitim / paketleme
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Test ve kapsam
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Tip kontrol / lint cache
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Isletim sistemi
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Loglar
+*.log
+logs/
