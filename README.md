@@ -31,7 +31,6 @@ Uygulama `http://localhost:8080` adresinde çalışır.
 | Araç | Dosya | Ne Yapar |
 |---|---|---|
 | `makro_hesapla` | `backend/tools/makro.py` | Yemek adı + gram → kalori/protein/karbo/yağ hesaplar |
-| `get_datetime` | `backend/tools/tarih_saat.py` | Şu anki tarih ve saati döndürür |
 | `terminal` | `backend/tools/__init__.py` | Shell komutu çalıştırır |
 | `dosya_oku` | `backend/tools/__init__.py` | Dosya okur |
 | `dosya_yaz` | `backend/tools/__init__.py` | Dosya yazar |
