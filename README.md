@@ -1,29 +1,37 @@
-# Proje Adı
+# Fit Menü Planlayıcı — vbl1
 
-vbl1
+Bu proje, Flask backend ve vanilla JavaScript frontend kullanarak geliştirilmiş bir AI agent uygulamasıdır. Kullanıcılar LLM arayüzü, sohbet asistanı, kodlama agenti ve fit menü planlayıcısı sayfalarını kullanabilir.
 
-## Proje Hakkında
+## Eklenen Araç: `makro_hesapla`
 
-Bu proje, çeşitli Python modüllerinden oluşan bir yazılım uygulamasıdır. Projede agent ve asistan dosyaları ile, front-end tarafında ise HTML dosyaları ile kullanıcı ara yüzleri oluşturulmuştur.
+`backend/tools/makro.py` dosyasında tanımlanan `makro_hesapla` aracı, agent'a besin değerlerini hesaplama yeteneği kazandırır. Yemek adı ve gram miktarı parametre olarak alır; 30'dan fazla besini kapsayan yerleşik bir veritabanından kalori, protein, karbonhidrat ve yağ değerlerini hesaplayarak döndürür. Bu sayede Fit Menü Planlayıcı sayfasındaki agent, kullanıcının kişisel profiline (yaş, kilo, boy, cinsiyet) göre makro-doğruluklu beslenme planları ve tarif önerileri sunabilir.
 
 ## Kurulum
 
-Projeyi çalıştırmak için gereksinim dosyasındakı paketlerin kurulması gerekmektedir. Bunun için:
+`.env` dosyasında `OPENAI_API_KEY` tanımlı olmalıdır.
 
-```
+```bash
 pip install -r requirements.txt
+flask --app app run --debug --port 8080
 ```
 
-komutunu çalıştırarak gerekli tüm bağımlılıkları yükleyebilirsiniz.
+Uygulama `http://localhost:8080` adresinde çalışır.
 
-## Kullanım
+## Sayfalar
 
-Proje, arka planda `app.py`, `agent.py`, `asistan.py` ve `llm.py` Python dosyaları ve ön yüzde `frontend` klasöründeki HTML dosyaları ile çalışmaktadır. Her bir bileşen spesifik işlemler için tasarlanmıştır.
+| Sayfa | URL |
+|---|---|
+| LLM Arayüzü | `/` |
+| Asistan | `/asistan` |
+| Kodlama Agenti | `/agent` |
+| Fit Menü Planlayıcı | `/menu` |
 
-## Katkıda Bulunma
+## Araçlar
 
-Katkıda bulunmak isteyenler standart bir pull request süreci üzerinden projeye katkıda bulunabilirler.
-
-## Lisans
-
-Bu projeye ait lisans bilgileri burada yer alacaktır.
+| Araç | Dosya | Ne Yapar |
+|---|---|---|
+| `makro_hesapla` | `backend/tools/makro.py` | Yemek adı + gram → kalori/protein/karbo/yağ hesaplar |
+| `get_datetime` | `backend/tools/tarih_saat.py` | Şu anki tarih ve saati döndürür |
+| `terminal` | `backend/tools/__init__.py` | Shell komutu çalıştırır |
+| `dosya_oku` | `backend/tools/__init__.py` | Dosya okur |
+| `dosya_yaz` | `backend/tools/__init__.py` | Dosya yazar |

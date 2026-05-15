@@ -20,14 +20,12 @@ Güncelleme yapmazsan mimari bilgisi eskir ve gelecekteki Claude oturumları yan
 ## Geliştirme Ortamı
 
 ```bash
-# Sanal ortamı aktifleştir
-source .venv/bin/activate
-
 # Bağımlılıkları yükle
 pip install -r requirements.txt
 
-# Uygulamayı çalıştır (http://localhost:5000)
-flask --app app run --debug
+# Uygulamayı çalıştır (http://localhost:8080)
+# Not: macOS'ta port 5000 AirPlay tarafından kullanıldığından 8080 kullanılır
+flask --app app run --debug --port 8080
 ```
 
 `.env` dosyasında `OPENAI_API_KEY` tanımlı olmalıdır.
@@ -36,23 +34,27 @@ flask --app app run --debug
 
 ## Mimari
 
-Flask backend + vanilla JS frontend. Üç ayrı sayfa sunar:
+Flask backend + vanilla JS frontend. Dört ayrı sayfa sunar:
 
 | Sayfa | URL | Açıklama |
 |---|---|---|
 | LLM Arayüzü | `/` | Tek seferlik, hafızasız LLM çağrısı |
 | Asistan | `/asistan` | Conversation history tutan sohbet arayüzü |
 | Kodlama Agenti | `/agent` | Tool-calling agentic loop arayüzü |
+| Fit Menü Planlayıcı | `/menu` | Profil girişli, makro hesaplamalı beslenme agenti |
 
 ### Dosya Sorumlulukları
 
 - **`app.py`** — Flask uygulaması. Routing, model doğrulaması, asistan ve agent oturum yönetimi.
 - **`llm.py`** — OpenAI istemcisi kurulumu ve `stream_llm()` fonksiyonu. Tek seferlik, history'siz.
 - **`asistan.py`** — `Asistan` sınıfı. Conversation history tutan, `sohbet()` ve `stream_sohbet()` metodları.
-- **`agent.py`** — `Agent` sınıfı. Tool-calling agentic loop; `calistir()` generator'ı her adımda event dict'i yield eder. Tool'lar: `terminal`, `dosya_oku`, `dosya_yaz`.
+- **`agent.py`** — `Agent` sınıfı. Tool-calling agentic loop; `calistir()` generator'ı her adımda event dict'i yield eder. Araçları `backend/tools` paketinden alır.
+- **`backend/tools/__init__.py`** — `TOOL_DEFINITIONS` listesi ve `TOOL_FUNCTIONS` sözlüğü. Tüm araçların merkezi kayıt yeri.
+- **`backend/tools/makro.py`** — `makro_hesapla` aracı. Yemek adı + gram → kalori/protein/karbo/yağ döndürür.
 - **`frontend/index.html`** — LLM arayüzü. Tek prompt → tek yanıt.
 - **`frontend/asistan.html`** — Sohbet arayüzü. Baloncuklu, çok turlu, session tabanlı.
 - **`frontend/agent.html`** — Agent arayüzü. Her adımı, tool call'ları, sonuçlarını ve thinking text'ini görsel olarak gösterir.
+- **`frontend/menu.html`** — Fit Menü Planlayıcı. Sol kolon: kullanıcı profili (yaş/kilo/boy/cinsiyet). Sağ kolon: menü tercihi butonları. Alt: chat bar.
 
 ### LLM Arayüzü Veri Akışı
 
@@ -95,3 +97,4 @@ Flask backend + vanilla JS frontend. Üç ayrı sayfa sunar:
 - Asistan yanıtları `text/plain`, agent yanıtları `application/x-ndjson` olarak stream edilir.
 - Agent terminal tool'u `/tmp/agent_workspace` dizininde çalışır; `shell=True` ile arbitrary komut çalıştırır (eğitim ortamı, localhost).
 - Agent `thinking` event'i: model tool çağrısından önce metin üretirse bu `thinking` olarak işaretlenir; son yanıt `text` olarak işaretlenir.
+- Yeni araç eklendiğinde: `backend/tools/` altına dosya ekle, `backend/tools/__init__.py`'deki `TOOL_DEFINITIONS` ve `TOOL_FUNCTIONS`'a kaydet.

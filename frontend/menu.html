@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fit Menü Planlayıcı</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0faf4;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: linear-gradient(135deg, #1a7a4a 0%, #2da55e 100%);
+      border-radius: 16px;
+      padding: 20px 24px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .header .avatar {
+      width: 48px; height: 48px;
+      background: rgba(255,255,255,.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .header h1 { font-size: 1.15rem; font-weight: 700; }
+    .header p  { font-size: 0.82rem; opacity: .85; margin-top: 2px; }
+
+    /* ── TWO COLUMNS ── */
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #c8e6d4;
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+    .card h2 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: #1a7a4a;
+      margin-bottom: 14px;
+    }
+
+    /* profile inputs */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .field label {
+      display: block;
+      font-size: 0.76rem;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #c8e6d4;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      color: #222;
+      background: #f8fdfb;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus { border-color: #1a7a4a; }
+
+    /* preference buttons */
+    .pref-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .pref-btn {
+      background: #f0faf4;
+      border: 1.5px solid #c8e6d4;
+      border-radius: 10px;
+      padding: 10px 8px;
+      cursor: pointer;
+      font-size: 0.83rem;
+      color: #1a7a4a;
+      text-align: center;
+      font-weight: 500;
+      transition: all .15s;
+      line-height: 1.3;
+    }
+    .pref-btn .icon { display: block; font-size: 1.3rem; margin-bottom: 4px; }
+    .pref-btn:hover { background: #d6f0e3; border-color: #1a7a4a; }
+    .pref-btn.selected {
+      background: #1a7a4a;
+      border-color: #1a7a4a;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(26,122,74,.3);
+    }
+
+    /* ── MESSAGES ── */
+    .messages {
+      background: #fff;
+      border: 1px solid #c8e6d4;
+      border-radius: 14px;
+      padding: 20px;
+      min-height: 260px;
+      max-height: 420px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      color: #bbb;
+    }
+    .empty-state .big-icon { font-size: 2.6rem; margin-bottom: 8px; }
+    .empty-state p { font-size: 0.88rem; }
+
+    .msg { display: flex; gap: 8px; max-width: 88%; }
+    .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg.user .bubble {
+      background: #1a7a4a; color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
+    .msg.agent .bubble {
+      background: #f0faf4; color: #1a2e22;
+      border: 1px solid #c8e6d4;
+      border-radius: 18px 18px 18px 4px;
+    }
+    .bubble { padding: 10px 14px; font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .msg-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: #1a7a4a; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; flex-shrink: 0; align-self: flex-end;
+    }
+    .msg.user .msg-avatar { background: #2da55e; font-size: 0.7rem; }
+
+    .tool-block {
+      background: #fff8e1; border: 1px solid #ffe082;
+      border-radius: 8px; padding: 7px 11px;
+      font-size: 0.77rem; font-family: monospace; color: #5a4500;
+      align-self: flex-start; max-width: 92%;
+    }
+    .tool-block .lbl { font-weight: 700; color: #b8860b; margin-bottom: 2px; font-size: 0.7rem; text-transform: uppercase; }
+    .tool-result-block {
+      background: #e8f5e9; border: 1px solid #a5d6a7;
+      border-radius: 8px; padding: 7px 11px;
+      font-size: 0.77rem; font-family: monospace; color: #1b5e20;
+      align-self: flex-start; max-width: 92%;
+    }
+    .tool-result-block .lbl { font-weight: 700; color: #2e7d32; margin-bottom: 2px; font-size: 0.7rem; text-transform: uppercase; }
+    .thinking-block {
+      font-size: 0.8rem; color: #999; font-style: italic;
+      padding: 3px 8px; border-left: 2px solid #c8e6d4;
+      align-self: flex-start; max-width: 92%;
+    }
+    .step-badge { font-size: 0.7rem; color: #bbb; text-align: center; align-self: center; }
+    .typing-dot {
+      display: inline-block; width: 6px; height: 6px;
+      border-radius: 50%; background: #1a7a4a;
+      animation: blink 1s infinite; margin: 0 2px;
+    }
+    .typing-dot:nth-child(2) { animation-delay: .2s; }
+    .typing-dot:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+
+    /* ── INPUT BAR ── */
+    .input-bar {
+      background: #fff;
+      border: 1px solid #c8e6d4;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .input-bar textarea {
+      flex: 1; border: none; outline: none;
+      font-size: 0.92rem; resize: none; line-height: 1.5;
+      max-height: 120px; font-family: inherit;
+      color: #1a2e22; background: transparent;
+    }
+    .send-btn {
+      background: #1a7a4a; color: #fff; border: none;
+      border-radius: 10px; padding: 10px 20px;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: background .15s; flex-shrink: 0;
+    }
+    .send-btn:hover:not(:disabled) { background: #155c38; }
+    .send-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+    @media (max-width: 600px) {
+      .columns { grid-template-columns: 1fr; }
+      .profile-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="avatar">🥦</div>
+    <div>
+      <h1>Fit Menü Planlayıcı</h1>
+      <p>Kişisel bilgilerini gir, menü tercihini seç veya direkt soru sor.</p>
+    </div>
+  </div>
+
+  <!-- TWO COLUMNS -->
+  <div class="columns">
+
+    <!-- LEFT: Profile -->
+    <div class="card">
+      <h2>👤 Profil Bilgileri</h2>
+      <div class="profile-grid">
+        <div class="field">
+          <label>Yaş</label>
+          <input type="number" id="yas" placeholder="örn. 25" min="10" max="100" />
+        </div>
+        <div class="field">
+          <label>Cinsiyet</label>
+          <select id="cinsiyet">
+            <option value="">Seç</option>
+            <option value="Erkek">Erkek</option>
+            <option value="Kadın">Kadın</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Kilo (kg)</label>
+          <input type="number" id="kilo" placeholder="örn. 70" min="30" max="250" />
+        </div>
+        <div class="field">
+          <label>Boy (cm)</label>
+          <input type="number" id="boy" placeholder="örn. 175" min="100" max="250" />
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Preferences -->
+    <div class="card">
+      <h2>🍽️ Menü Tercihi</h2>
+      <div class="pref-grid">
+        <button class="pref-btn" onclick="tercihSec(this, 'Haftalık menü önerisi hazırla')">
+          <span class="icon">📅</span>Haftalık Menü Önerisi
+        </button>
+        <button class="pref-btn" onclick="tercihSec(this, 'Dengeli ve sağlıklı bir menü planı oluştur')">
+          <span class="icon">⚖️</span>Dengeli Menü
+        </button>
+        <button class="pref-btn" onclick="tercihSec(this, 'Protein ağırlıklı bir beslenme planı oluştur')">
+          <span class="icon">💪</span>Protein Ağırlıklı
+        </button>
+        <button class="pref-btn" onclick="tercihSec(this, 'Sebze ağırlıklı, bitkisel bir menü planı oluştur')">
+          <span class="icon">🥗</span>Sebze Ağırlıklı
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages" id="messages">
+    <div class="empty-state" id="empty">
+      <div class="big-icon">🥗</div>
+      <p>Profil bilgilerini doldur, tercih seç veya direkt soru yaz.</p>
+    </div>
+  </div>
+
+  <!-- INPUT BAR -->
+  <div class="input-bar">
+    <textarea
+      id="prompt"
+      rows="1"
+      placeholder="Sorunuzu yazın… (Enter: gönder, Shift+Enter: yeni satır)"
+      onkeydown="inputKeydown(event)"
+      oninput="autoResize(this)"
+    ></textarea>
+    <button class="send-btn" id="send-btn" onclick="gonder()">Gönder ↑</button>
+  </div>
+
+</div>
+
+<script>
+const SISTEM_PROMPTU = `Sen bir beslenme uzmanı ve fitness koçusun. Kullanıcıların sağlıklı beslenme planları, fit yemek tarifleri ve makro hesaplamaları konusunda yardım ediyorsun. Türkçe konuş, net ve motive edici yanıtlar ver.
+
+Kullanıcı profil bilgisi paylaştıysa buna göre kişiselleştirilmiş öneriler sun. Makro değerleri sorarken makro_hesapla aracını kullan. Yanıtlarını düzenli ve okunması kolay biçimde ver.`;
+
+let sessionId = null;
+let seciliTercih = null;
+
+async function oturumAc() {
+  const model = "gpt-4.1-mini";
+  const res = await fetch("/api/agent/yeni", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system_instructions: SISTEM_PROMPTU, model }),
+  });
+  const data = await res.json();
+  sessionId = data.session_id;
+}
+
+function profilMetni() {
+  const yas = document.getElementById("yas").value;
+  const kilo = document.getElementById("kilo").value;
+  const boy = document.getElementById("boy").value;
+  const cinsiyet = document.getElementById("cinsiyet").value;
+  const parcalar = [];
+  if (yas) parcalar.push(`Yaş: ${yas}`);
+  if (cinsiyet) parcalar.push(`Cinsiyet: ${cinsiyet}`);
+  if (kilo) parcalar.push(`Kilo: ${kilo} kg`);
+  if (boy) parcalar.push(`Boy: ${boy} cm`);
+  return parcalar.length ? `[Kullanıcı profili — ${parcalar.join(", ")}]\n\n` : "";
+}
+
+function tercihSec(btn, mesaj) {
+  document.querySelectorAll(".pref-btn").forEach(b => b.classList.remove("selected"));
+  if (seciliTercih === mesaj) {
+    seciliTercih = null;
+    return;
+  }
+  btn.classList.add("selected");
+  seciliTercih = mesaj;
+  gonderMesaj(profilMetni() + mesaj);
+}
+
+function mesajEkle(role, text) {
+  document.getElementById("empty")?.remove();
+  const container = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = `msg ${role}`;
+  const avatar = document.createElement("div");
+  avatar.className = "msg-avatar";
+  avatar.textContent = role === "user" ? "Sen" : "🥦";
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return bubble;
+}
+
+function blokEkle(type, content) {
+  document.getElementById("empty")?.remove();
+  const container = document.getElementById("messages");
+  const div = document.createElement("div");
+  if (type === "step_start") {
+    div.className = "step-badge";
+    div.textContent = `— Adım ${content} —`;
+  } else if (type === "thinking") {
+    div.className = "thinking-block";
+    div.textContent = `💭 ${content}`;
+  } else if (type === "tool_call") {
+    div.className = "tool-block";
+    div.innerHTML = `<div class="lbl">🔧 ${content.name}</div>${JSON.stringify(content.args, null, 2)}`;
+  } else if (type === "tool_result") {
+    div.className = "tool-result-block";
+    div.innerHTML = `<div class="lbl">✅ Sonuç</div>${content.result}`;
+  } else if (type === "typing") {
+    div.className = "msg agent";
+    div.innerHTML = `<div class="msg-avatar">🥦</div><div class="bubble"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+async function gonderMesaj(fullText) {
+  if (!fullText.trim()) return;
+  if (!sessionId) await oturumAc();
+
+  document.getElementById("send-btn").disabled = true;
+
+  const gosterilen = fullText.replace(/^\[Kullanıcı profili[^\]]*\]\n\n/, "");
+  mesajEkle("user", gosterilen);
+  const typingEl = blokEkle("typing");
+
+  const res = await fetch("/api/agent/calistir", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, user_prompt: fullText }),
+  });
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  typingEl.remove();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      let ev; try { ev = JSON.parse(line); } catch { continue; }
+      if (ev.type === "step_start" && ev.step > 1) blokEkle("step_start", ev.step);
+      else if (ev.type === "thinking") blokEkle("thinking", ev.content);
+      else if (ev.type === "tool_call") blokEkle("tool_call", { name: ev.name, args: ev.args });
+      else if (ev.type === "tool_result") blokEkle("tool_result", { name: ev.name, result: ev.result });
+      else if (ev.type === "text") mesajEkle("agent", ev.content);
+    }
+  }
+
+  document.getElementById("send-btn").disabled = false;
+  document.getElementById("prompt").focus();
+}
+
+function gonder() {
+  const ta = document.getElementById("prompt");
+  const text = ta.value.trim();
+  if (!text) return;
+  ta.value = "";
+  autoResize(ta);
+  gonderMesaj(profilMetni() + text);
+}
+
+function inputKeydown(e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); gonder(); }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+</script>
+</body>
+</html>

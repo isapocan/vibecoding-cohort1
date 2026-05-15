@@ -96,6 +96,11 @@ def agent_sayfasi():
     return send_from_directory("frontend", "agent.html")
 
 
+@app.route("/menu")
+def menu_sayfasi():
+    return send_from_directory("frontend", "menu.html")
+
+
 @app.route("/api/agent/yeni", methods=["POST"])
 def agent_yeni():
     data = request.get_json(silent=True) or {}

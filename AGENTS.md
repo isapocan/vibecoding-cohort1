@@ -21,18 +21,24 @@ Bu dosyaları güncellemeden commit atmak yasaktır.
 ## Proje Yapısı
 
 ```
-app.py                  # Flask uygulaması; routing, doğrulama, oturum yönetimi
-llm.py                  # OpenAI istemcisi; hafızasız stream_llm() fonksiyonu
-asistan.py              # Asistan sınıfı; conversation history + stream_sohbet()
-agent.py                # Agent sınıfı; tool-calling agentic loop + calistir() generator
+app.py                      # Flask uygulaması; routing, doğrulama, oturum yönetimi
+llm.py                      # OpenAI istemcisi; hafızasız stream_llm() fonksiyonu
+asistan.py                  # Asistan sınıfı; conversation history + stream_sohbet()
+agent.py                    # Agent sınıfı; tool-calling agentic loop + calistir() generator
+backend/
+  __init__.py               # Paket tanımı
+  tools/
+    __init__.py             # TOOL_DEFINITIONS ve TOOL_FUNCTIONS; araç merkezi kayıt
+    makro.py                # makro_hesapla aracı: yemek + gram → kalori/makro
 frontend/
-  index.html            # LLM arayüzü: tek seferlik prompt/yanıt sayfası
-  asistan.html          # Asistan arayüzü: çok turlu, baloncuklu sohbet sayfası
-  agent.html            # Agent arayüzü: tool call'ları ve adımları görsel gösterim
-requirements.txt        # Python bağımlılıkları
-.env                    # Yerel sırlar (commit edilmez); OPENAI_API_KEY buraya
-CLAUDE.md               # Claude Code'a mimari rehberlik
-AGENTS.md               # Bu dosya; geliştirici ve ajan kuralları
+  index.html                # LLM arayüzü: tek seferlik prompt/yanıt sayfası
+  asistan.html              # Asistan arayüzü: çok turlu, baloncuklu sohbet sayfası
+  agent.html                # Agent arayüzü: tool call'ları ve adımları görsel gösterim
+  menu.html                 # Fit Menü Planlayıcı: profil girişi + menü tercihi + chat
+requirements.txt            # Python bağımlılıkları
+.env                        # Yerel sırlar (commit edilmez); OPENAI_API_KEY buraya
+CLAUDE.md                   # Claude Code'a mimari rehberlik
+AGENTS.md                   # Bu dosya; geliştirici ve ajan kuralları
 ```
 
 Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrıları `llm.py`, `asistan.py` veya `agent.py`'de kalır. Statik dosyalar `frontend/` altına eklenir.
@@ -49,15 +55,16 @@ Backend routing ve doğrulama `app.py`'de kalır. Provider'a özgü LLM çağrı
 | POST | `/api/agent/yeni` | `{model, system_instructions}` | Yeni agent oturumu oluşturur, `session_id` döner |
 | POST | `/api/agent/calistir` | `{session_id, user_prompt}` | Agent'ı çalıştırır (NDJSON stream; event tipleri: `step_start`, `thinking`, `tool_call`, `tool_result`, `text`, `done`, `error`) |
 
+`/menu` sayfası mevcut `/api/agent/*` endpoint'lerini kullanır; kendine özel endpoint yoktur.
+
 ---
 
 ## Geliştirme Komutları
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
-flask --app app run --debug   # http://127.0.0.1:5000
+# macOS'ta port 5000 AirPlay tarafından kullanıldığından 8080 kullan
+flask --app app run --debug --port 8080   # http://127.0.0.1:8080
 ```
 
 ---
